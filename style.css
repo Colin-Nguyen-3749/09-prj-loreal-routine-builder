@@ -135,6 +135,29 @@ body {
   outline-offset: 2px;
 }
 
+/* Generate routine button */
+.generate-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #fff;
+  background: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.generate-btn:hover {
+  background: #666;
+}
+
+.generate-btn i {
+  margin-right: 8px;
+}
+
 /* visually hidden */
 .visually-hidden {
   position: absolute;
