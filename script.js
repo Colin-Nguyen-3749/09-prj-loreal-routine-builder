@@ -1,8 +1,12 @@
 /* Get references to DOM elements */
 const categoryFilter = document.getElementById("categoryFilter");
 const productsContainer = document.getElementById("productsContainer");
+const selectedProductsList = document.getElementById("selectedProductsList");
 const chatForm = document.getElementById("chatForm");
 const chatWindow = document.getElementById("chatWindow");
+
+/* Array to store selected products */
+let selectedProducts = [];
 
 /* Show initial placeholder until user selects a category */
 productsContainer.innerHTML = `
@@ -10,6 +14,9 @@ productsContainer.innerHTML = `
     Select a category to view products
   </div>
 `;
+
+/* Initialize the selected products display */
+updateSelectedProductsDisplay();
 
 /* Load product data from JSON file */
 async function loadProducts() {
@@ -23,16 +30,116 @@ function displayProducts(products) {
   productsContainer.innerHTML = products
     .map(
       (product) => `
-    <div class="product-card">
+    <div class="product-card" data-product-id="${product.id}">
       <img src="${product.image}" alt="${product.name}">
       <div class="product-info">
         <h3>${product.name}</h3>
         <p>${product.brand}</p>
       </div>
+      <div class="selection-indicator">
+        <i class="fa-solid fa-check"></i>
+      </div>
     </div>
   `
     )
     .join("");
+
+  /* Add click event listeners to all product cards */
+  addProductClickListeners(products);
+}
+
+/* Add click event listeners to product cards for selection */
+function addProductClickListeners(products) {
+  const productCards = document.querySelectorAll(".product-card");
+
+  productCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      const productId = card.dataset.productId;
+      /* Find the product data using the ID from the products array */
+      const product = products.find((p) => p.id === productId);
+
+      /* Toggle the selection state of this card */
+      toggleProductSelection(card, product);
+    });
+  });
+}
+
+/* Toggle product selection state and update UI */
+function toggleProductSelection(card, product) {
+  const isSelected = card.classList.contains("selected");
+
+  if (isSelected) {
+    /* Remove from selection */
+    card.classList.remove("selected");
+    selectedProducts = selectedProducts.filter((p) => p.id !== product.id);
+  } else {
+    /* Add to selection */
+    card.classList.add("selected");
+    selectedProducts.push(product);
+  }
+
+  /* Update the selected products display */
+  updateSelectedProductsDisplay();
+}
+
+/* Update the selected products list in the UI */
+function updateSelectedProductsDisplay() {
+  /* Check if the selectedProductsList element exists */
+  if (!selectedProductsList) {
+    console.warn("selectedProductsList element not found");
+    return;
+  }
+
+  if (selectedProducts.length === 0) {
+    selectedProductsList.innerHTML =
+      '<p class="no-products">No products selected</p>';
+    return;
+  }
+
+  selectedProductsList.innerHTML = selectedProducts
+    .map(
+      (product) => `
+      <div class="selected-product-item">
+        <img src="${product.image}" alt="${product.name}">
+        <div class="selected-product-info">
+          <h4>${product.name}</h4>
+          <p>${product.brand}</p>
+        </div>
+        <button class="remove-product" data-product-id="${product.id}">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+    `
+    )
+    .join("");
+
+  /* Add click listeners to remove buttons */
+  addRemoveProductListeners();
+}
+
+/* Add click event listeners to remove buttons in selected products */
+function addRemoveProductListeners() {
+  const removeButtons = document.querySelectorAll(".remove-product");
+
+  removeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const productId = button.dataset.productId;
+
+      /* Remove from selected products array */
+      selectedProducts = selectedProducts.filter((p) => p.id !== productId);
+
+      /* Remove selected class from product card if visible */
+      const productCard = document.querySelector(
+        `[data-product-id="${productId}"]`
+      );
+      if (productCard) {
+        productCard.classList.remove("selected");
+      }
+
+      /* Update the display */
+      updateSelectedProductsDisplay();
+    });
+  });
 }
 
 /* Filter and display products when category changes */
