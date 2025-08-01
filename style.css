@@ -490,6 +490,47 @@ body {
   color: #666;
 }
 
+/* Styling for converted markdown elements */
+.message h3 {
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 12px 0 8px 0;
+}
+
+.message ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.message ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.message li {
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+/* Styling for clickable links */
+.message a {
+  color: #0066cc;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.message a:hover {
+  color: #004499;
+  background-color: rgba(0, 102, 204, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.message a:visited {
+  color: #663399;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .products-grid {

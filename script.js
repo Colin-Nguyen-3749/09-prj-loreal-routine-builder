@@ -304,6 +304,57 @@ async function sendMessageWithWebSearch(
   return response;
 }
 
+/* Function to convert markdown-like formatting to HTML */
+function convertMarkdownToHtml(text) {
+  /* Convert **bold** to <strong> */
+  text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+  /* Convert *italic* to <em> */
+  text = text.replace(/\*(.*?)\*/g, "<em>$1</em>");
+
+  /* Convert # headers to <h3> */
+  text = text.replace(/^### (.*$)/gm, "<h3>$1</h3>");
+  text = text.replace(/^## (.*$)/gm, "<h3>$1</h3>");
+  text = text.replace(/^# (.*$)/gm, "<h3>$1</h3>");
+
+  /* Convert bullet points - ... to <li> */
+  text = text.replace(/^- (.*$)/gm, "<li>$1</li>");
+
+  /* Wrap consecutive <li> elements in <ul> */
+  text = text.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
+
+  /* Convert numbered lists 1. ... to <ol><li> */
+  text = text.replace(/^\d+\. (.*$)/gm, "<li>$1</li>");
+
+  /* Convert line breaks */
+  text = text.replace(/\n/g, "<br>");
+
+  return text;
+}
+
+/* Function to make URLs clickable */
+function makeLinksClickable(text) {
+  /* Regular expression to find URLs */
+  const urlRegex = /(https?:\/\/[^\s<>"{}|\\^`[\]]+)/g;
+
+  /* Replace URLs with clickable links that open in new tab */
+  return text.replace(
+    urlRegex,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+}
+
+/* Function to process AI response text */
+function processAiResponse(text) {
+  /* First convert markdown to HTML */
+  let processedText = convertMarkdownToHtml(text);
+
+  /* Then make links clickable */
+  processedText = makeLinksClickable(processedText);
+
+  return processedText;
+}
+
 /* Chat form submission handler - Cloudflare Worker integration */
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault(); // Prevent the form from submitting the traditional way
@@ -447,16 +498,18 @@ Make the routine practical, up-to-date, and easy to follow. Include any recent t
     const data = await response.json();
     const routineResponse = data.choices[0].message.content;
 
+    /* Process the routine response to convert markdown and make links clickable */
+    const processedRoutineResponse = processAiResponse(routineResponse);
+
     chatWindow.innerHTML = `
       <div class="message ai-message routine-message">
         <strong>Your Personalized L'Oréal Routine (with latest trends):</strong>
         <div class="routine-content">
-          ${routineResponse.replace(/\n/g, "<br>")}
+          ${processedRoutineResponse}
         </div>
       </div>
     `;
 
-    /* Update conversation history */
     messages = [{ role: "assistant", content: routineResponse }];
   } catch (error) {
     console.error("Error generating routine:", error);
@@ -470,12 +523,15 @@ Make the routine practical, up-to-date, and easy to follow. Include any recent t
 
 /* Function to update the chat display with messages */
 function updateChatDisplay(userMessage, aiResponse) {
+  /* Process the AI response to convert markdown and make links clickable */
+  const processedAiResponse = processAiResponse(aiResponse);
+
   chatWindow.innerHTML = `
     <div class="message user-message">
       <strong>You:</strong> ${userMessage}
     </div>
     <div class="message ai-message">
-      <strong>AI Assistant:</strong> ${aiResponse}
+      <strong>AI Assistant:</strong> ${processedAiResponse}
     </div>
   `;
 }
