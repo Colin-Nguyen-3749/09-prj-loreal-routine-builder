@@ -358,7 +358,7 @@ Please provide:
 3. Any important tips for application or usage
 4. How these products work together
 
-Make the routine practical and easy to follow for someone who wants to get the best results from these specific L'Oréal products.`;
+Make the routine practical and easy to follow for someone who wants to get the best results from these specific L'Oréal products. Dive right into the details, and remember to chunk the information into clear, actionable steps so that the reader doesn't get overwhelmed with info.`;
 
   /* Reset conversation history for routine generation */
   const routineMessages = [
