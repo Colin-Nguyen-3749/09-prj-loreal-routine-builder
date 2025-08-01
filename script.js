@@ -1,5 +1,6 @@
 /* Get references to DOM elements */
 const categoryFilter = document.getElementById("categoryFilter");
+const productSearch = document.getElementById("productSearch");
 const productsContainer = document.getElementById("productsContainer");
 const selectedProductsList = document.getElementById("selectedProductsList");
 const chatForm = document.getElementById("chatForm");
@@ -10,6 +11,11 @@ const generateRoutineBtn = document.getElementById("generateRoutine");
 
 /* Array to store selected products */
 let selectedProducts = [];
+
+/* Global variables to store current filter state */
+let currentProducts = [];
+let currentCategory = "";
+let currentSearchTerm = "";
 
 /* Load selected products from localStorage when page loads */
 function loadSelectedProductsFromStorage() {
@@ -241,19 +247,106 @@ function restoreSelectionState() {
   });
 }
 
-/* Filter and display products when category changes */
-categoryFilter.addEventListener("change", async (e) => {
-  const products = await loadProducts();
-  const selectedCategory = e.target.value;
+/* Filter products based on both category and search term */
+function filterProducts(products, category, searchTerm) {
+  let filteredProducts = products;
 
-  /* filter() creates a new array containing only products 
-     where the category matches what the user selected */
-  const filteredProducts = products.filter(
-    (product) => product.category === selectedCategory
+  /* First filter by category if one is selected */
+  if (category) {
+    filteredProducts = filteredProducts.filter(
+      (product) => product.category === category
+    );
+  }
+
+  /* Then filter by search term if one is entered */
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    filteredProducts = filteredProducts.filter((product) => {
+      /* Search in product name, brand, and description */
+      return (
+        product.name.toLowerCase().includes(searchLower) ||
+        product.brand.toLowerCase().includes(searchLower) ||
+        product.description.toLowerCase().includes(searchLower)
+      );
+    });
+  }
+
+  return filteredProducts;
+}
+
+/* Update the products display based on current filters */
+async function updateProductsDisplay() {
+  /* Load all products */
+  const allProducts = await loadProducts();
+
+  /* Apply both category and search filters */
+  const filteredProducts = filterProducts(
+    allProducts,
+    currentCategory,
+    currentSearchTerm
   );
 
-  displayProducts(filteredProducts);
+  /* Store current products for reference */
+  currentProducts = filteredProducts;
+
+  /* Show products or no results message */
+  if (filteredProducts.length === 0) {
+    const message =
+      currentCategory || currentSearchTerm
+        ? "No products match your search criteria"
+        : "Select a category to view products";
+
+    productsContainer.innerHTML = `
+      <div class="placeholder-message">
+        ${message}
+      </div>
+    `;
+  } else {
+    displayProducts(filteredProducts);
+  }
+
+  /* Log for debugging */
+  console.log(
+    `Showing ${filteredProducts.length} products for category: "${currentCategory}", search: "${currentSearchTerm}"`
+  );
+}
+
+/* Category filter change handler */
+categoryFilter.addEventListener("change", async (e) => {
+  currentCategory = e.target.value;
+  console.log("Category changed to:", currentCategory);
+
+  /* Update display with new filters */
+  await updateProductsDisplay();
 });
+
+/* Search input handler with real-time filtering */
+productSearch.addEventListener("input", async (e) => {
+  currentSearchTerm = e.target.value.trim();
+  console.log("Search term changed to:", currentSearchTerm);
+
+  /* Update display with new filters */
+  await updateProductsDisplay();
+});
+
+/* Clear search when escape key is pressed */
+productSearch.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    productSearch.value = "";
+    currentSearchTerm = "";
+    updateProductsDisplay();
+  }
+});
+
+/* Add hover event listeners to product cards for description tooltips */
+function addProductHoverListeners() {
+  const productCards = document.querySelectorAll(".product-card");
+
+  productCards.forEach((card) => {
+    /* CSS handles the hover effect, but we can add additional logic here if needed */
+    /* The tooltip will show/hide automatically with CSS :hover pseudo-class */
+  });
+}
 
 /* Array to store conversation history */
 let messages = [];
