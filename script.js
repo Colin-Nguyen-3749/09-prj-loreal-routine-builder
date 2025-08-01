@@ -11,6 +11,36 @@ const generateRoutineBtn = document.getElementById("generateRoutine");
 /* Array to store selected products */
 let selectedProducts = [];
 
+/* Load selected products from localStorage when page loads */
+function loadSelectedProductsFromStorage() {
+  try {
+    const savedProducts = localStorage.getItem("selectedProducts");
+    if (savedProducts) {
+      selectedProducts = JSON.parse(savedProducts);
+      console.log(
+        "Loaded selected products from localStorage:",
+        selectedProducts
+      );
+    }
+  } catch (error) {
+    console.error("Error loading selected products from localStorage:", error);
+    selectedProducts = [];
+  }
+}
+
+/* Save selected products to localStorage */
+function saveSelectedProductsToStorage() {
+  try {
+    localStorage.setItem("selectedProducts", JSON.stringify(selectedProducts));
+    console.log("Saved selected products to localStorage:", selectedProducts);
+  } catch (error) {
+    console.error("Error saving selected products to localStorage:", error);
+  }
+}
+
+/* Load selected products when page loads */
+loadSelectedProductsFromStorage();
+
 /* Show initial placeholder until user selects a category */
 productsContainer.innerHTML = `
   <div class="placeholder-message">
@@ -74,6 +104,9 @@ function addRemoveProductListeners() {
       selectedProducts = selectedProducts.filter(
         (p) => p.id !== parseInt(productId)
       );
+
+      /* Save updated selection to localStorage */
+      saveSelectedProductsToStorage();
 
       /* Remove selected class from product card if visible */
       const productCard = document.querySelector(
@@ -156,6 +189,9 @@ function toggleProductSelection(card, product) {
     console.log("Added product. New count:", selectedProducts.length);
   }
 
+  /* Save updated selection to localStorage */
+  saveSelectedProductsToStorage();
+
   /* Update the selected products display immediately */
   updateSelectedProductsDisplay();
 }
@@ -187,15 +223,21 @@ function displayProducts(products) {
 
   /* Add hover event listeners to show/hide descriptions */
   addProductHoverListeners();
+
+  /* Restore selection state for previously selected products */
+  restoreSelectionState();
 }
 
-/* Add hover event listeners to product cards for description tooltips */
-function addProductHoverListeners() {
-  const productCards = document.querySelectorAll(".product-card");
-
-  productCards.forEach((card) => {
-    /* CSS handles the hover effect, but we can add additional logic here if needed */
-    /* The tooltip will show/hide automatically with CSS :hover pseudo-class */
+/* Restore visual selection state for cards that are already selected */
+function restoreSelectionState() {
+  selectedProducts.forEach((selectedProduct) => {
+    const productCard = document.querySelector(
+      `[data-product-id="${selectedProduct.id}"]`
+    );
+    if (productCard) {
+      productCard.classList.add("selected");
+      console.log(`Restored selection for product ID: ${selectedProduct.id}`);
+    }
   });
 }
 
@@ -358,7 +400,7 @@ Please provide:
 3. Any important tips for application or usage
 4. How these products work together
 
-Make the routine practical and easy to follow for someone who wants to get the best results from these specific L'Oréal products. Dive right into the details, and remember to chunk the information into clear, actionable steps so that the reader doesn't get overwhelmed with info.`;
+Make the routine practical and easy to follow for someone who wants to get the best results from these specific L'Oréal products. Act as if you're a friendly, knowledgeable beauty advisor who's excited to help me achieve my beauty goals. Be thorough, practical, and concise in your recommendations Remember to use bullet points and to chunk information to make it visually easy to read.`;
 
   /* Reset conversation history for routine generation */
   const routineMessages = [
