@@ -261,6 +261,49 @@ let messages = [];
 /* Cloudflare Worker URL for OpenAI API */
 const workerUrl = "https://loreal-worker.nguyen-c9.workers.dev/";
 
+/* Function to send message to OpenAI API with web search */
+async function sendMessageWithWebSearch(
+  userMessage,
+  isRoutineGeneration = false
+) {
+  /* Prepare the API request with web search enabled */
+  const requestBody = {
+    model: "gpt-4.1",
+    messages: isRoutineGeneration
+      ? [
+          {
+            role: "system",
+            content:
+              "You are an expert beauty and skincare advisor specializing in L'Oréal products. Use web search to find the latest information about beauty trends, product reviews, and skincare advice. Create detailed, personalized routines based on current best practices.",
+          },
+          {
+            role: "user",
+            content: userMessage,
+          },
+        ]
+      : messages,
+    max_tokens: 800,
+    temperature: 0.7,
+    /* Enable web search for more current information */
+    tools: [
+      {
+        type: "web_search",
+      },
+    ],
+    tool_choice: "auto",
+  };
+
+  const response = await fetch(workerUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  return response;
+}
+
 /* Chat form submission handler - Cloudflare Worker integration */
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault(); // Prevent the form from submitting the traditional way
@@ -280,68 +323,51 @@ chatForm.addEventListener("submit", async (event) => {
       <strong>You:</strong> ${userMessage}
     </div>
     <div class="message ai-message">
-      <strong>AI Assistant:</strong> <em>Thinking...</em>
+      <strong>AI Assistant:</strong> <em>Searching the web and thinking...</em>
     </div>
   `;
 
   /* Clear the input field */
   userInput.value = "";
 
-  /* Create system message if this is the first message */
+  /* Build context with selected products for web search */
   if (messages.length === 0) {
-    /* Build context about selected products */
     let productContext = "";
     if (selectedProducts.length > 0) {
-      productContext = `\n\nThe user has selected these products: ${selectedProducts
+      productContext = `\n\nThe user has selected these L'Oréal products: ${selectedProducts
         .map((p) => `${p.name} by ${p.brand}`)
-        .join(", ")}`;
+        .join(
+          ", "
+        )}. Please search for current information about these products and beauty routines.`;
     }
 
-    /* Add system message to help AI understand its role */
     messages.push({
       role: "system",
       content: `You are a helpful beauty and skincare assistant for L'Oréal products. 
-      Help users create personalized beauty routines based on their selected products and needs. 
-      Be friendly, knowledgeable, and provide practical advice about skincare, makeup, and haircare.
-      Keep responses concise and helpful.${productContext}`,
+      Use web search to find the latest beauty trends, product information, and skincare advice.
+      Help users create personalized beauty routines based on current best practices and their selected products.
+      Be friendly, knowledgeable, and provide up-to-date practical advice.${productContext}`,
     });
   }
 
-  /* Add the user's message to the conversation history */
   messages.push({ role: "user", content: userMessage });
 
   try {
-    /* Send a POST request to your Cloudflare Worker */
-    const response = await fetch(workerUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: messages,
-      }),
-    });
+    /* Use web search enabled function */
+    const response = await sendMessageWithWebSearch(userMessage);
 
-    /* Check if the response is successful */
     if (!response.ok) {
       throw new Error(
         `Worker request failed: ${response.status} ${response.statusText}`
       );
     }
 
-    /* Parse the JSON response from the worker */
     const data = await response.json();
-
-    /* Get the AI's response from the worker data */
     const aiResponse = data.choices[0].message.content;
 
-    /* Add AI response to conversation history */
     messages.push({ role: "assistant", content: aiResponse });
-
-    /* Update the chat window with both messages */
     updateChatDisplay(userMessage, aiResponse);
   } catch (error) {
-    /* Show error message if worker call fails */
     console.error("Error calling Cloudflare Worker:", error);
     chatWindow.innerHTML = `
       <div class="message user-message">
@@ -369,7 +395,7 @@ generateRoutineBtn.addEventListener("click", async () => {
   /* Show loading message in chat window */
   chatWindow.innerHTML = `
     <div class="message ai-message">
-      <strong>AI Routine Generator:</strong> <em>Creating your personalized routine...</em>
+      <strong>AI Routine Generator:</strong> <em>Searching for latest beauty trends and creating your routine...</em>
     </div>
   `;
 
@@ -383,8 +409,8 @@ generateRoutineBtn.addEventListener("click", async () => {
     };
   });
 
-  /* Create a comprehensive prompt for routine generation */
-  const routinePrompt = `Please create a detailed, personalized beauty routine using these specific products I've selected:
+  /* Enhanced prompt with web search request */
+  const routinePrompt = `Please search the web for the latest beauty trends and skincare advice, then create a detailed, personalized beauty routine using these specific L'Oréal products:
 
 ${productDetails
   .map(
@@ -394,69 +420,45 @@ ${productDetails
   )
   .join("\n\n")}
 
-Please provide:
+Please search for:
+- Current reviews and recommendations for these specific products
+- Latest beauty trends and techniques for 2024
+- Best practices for using these types of products together
+- Any recent dermatologist recommendations
+
+Then provide:
 1. A step-by-step routine organized by time of day (morning/evening)
-2. The correct order to use these products
-3. Any important tips for application or usage
-4. How these products work together
+2. The correct order to use these products based on current best practices
+3. Latest tips for application and usage
+4. How these products work together according to current research
 
-Make the routine practical and easy to follow for someone who wants to get the best results from these specific L'Oréal products. Act as if you're a friendly, knowledgeable beauty advisor who's excited to help me achieve my beauty goals. Be thorough, practical, and concise in your recommendations Remember to use bullet points and to chunk information to make it visually easy to read.`;
-
-  /* Reset conversation history for routine generation */
-  const routineMessages = [
-    {
-      role: "system",
-      content:
-        "You are an expert beauty and skincare advisor specializing in L'Oréal products. Create detailed, personalized routines based on the specific products users have selected. Be thorough, practical, and educational in your recommendations.",
-    },
-    {
-      role: "user",
-      content: routinePrompt,
-    },
-  ];
+Make the routine practical, up-to-date, and easy to follow. Include any recent trends or techniques that would enhance the effectiveness of these L'Oréal products.`;
 
   try {
-    /* Send request to Cloudflare Worker with product details */
-    const response = await fetch(workerUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: routineMessages,
-      }),
-    });
+    /* Use web search for routine generation */
+    const response = await sendMessageWithWebSearch(routinePrompt, true);
 
-    /* Check if the response is successful */
     if (!response.ok) {
       throw new Error(
         `Worker request failed: ${response.status} ${response.statusText}`
       );
     }
 
-    /* Parse the JSON response from the worker */
     const data = await response.json();
-
-    /* Get the AI's routine response */
     const routineResponse = data.choices[0].message.content;
 
-    /* Display the generated routine in the chat window */
     chatWindow.innerHTML = `
       <div class="message ai-message routine-message">
-        <strong>Your Personalized L'Oréal Routine:</strong>
+        <strong>Your Personalized L'Oréal Routine (with latest trends):</strong>
         <div class="routine-content">
           ${routineResponse.replace(/\n/g, "<br>")}
         </div>
       </div>
     `;
 
-    /* Add the routine to conversation history for follow-up questions */
-    messages = [
-      ...routineMessages,
-      { role: "assistant", content: routineResponse },
-    ];
+    /* Update conversation history */
+    messages = [{ role: "assistant", content: routineResponse }];
   } catch (error) {
-    /* Show error message if routine generation fails */
     console.error("Error generating routine:", error);
     chatWindow.innerHTML = `
       <div class="message error-message">
@@ -479,4 +481,5 @@ function updateChatDisplay(userMessage, aiResponse) {
 }
 
 /* Store the user message for display */
+userInput.dataset.lastMessage = userMessage;
 userInput.dataset.lastMessage = userMessage;
