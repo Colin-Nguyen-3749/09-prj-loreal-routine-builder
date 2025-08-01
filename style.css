@@ -466,6 +466,21 @@ body {
   color: #cc0000;
 }
 
+/* Special styling for routine messages */
+.routine-message {
+  background: #f8f5e8;
+  border-left: 4px solid #e3a535;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.routine-content {
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
 .message strong {
   color: #333;
   font-weight: 600;
