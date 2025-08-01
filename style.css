@@ -200,6 +200,7 @@ body {
   gap: 16px;
   margin: 30px 0;
   max-width: 100%;
+  overflow: visible;
 }
 
 .product-card {
@@ -216,6 +217,45 @@ body {
   position: relative;
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+}
+
+/* Product description tooltip */
+.product-description-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 400;
+}
+
+.product-description-tooltip p {
+  margin: 0;
+  text-align: center;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Ensure tooltip stays visible when card is hovered */
+.product-card:hover .product-description-tooltip {
+  opacity: 1;
+  visibility: visible;
+  color: white;
 }
 
 .product-card:hover {
@@ -441,6 +481,11 @@ body {
   .selected-product-info p {
     font-size: 9px;
   }
+
+  .product-description-tooltip {
+    font-size: 11px;
+    padding: 10px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -468,5 +513,10 @@ body {
   .selected-product-item img {
     width: 30px;
     height: 30px;
+  }
+
+  .product-description-tooltip {
+    font-size: 10px;
+    padding: 8px;
   }
 }

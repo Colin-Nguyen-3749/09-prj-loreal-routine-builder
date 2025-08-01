@@ -171,6 +171,9 @@ function displayProducts(products) {
       <div class="selection-indicator">
         <i class="fa-solid fa-check"></i>
       </div>
+      <div class="product-description-tooltip">
+        <p>${product.description}</p>
+      </div>
     </div>
   `
     )
@@ -178,6 +181,19 @@ function displayProducts(products) {
 
   /* Add click event listeners to all product cards */
   addProductClickListeners(products);
+
+  /* Add hover event listeners to show/hide descriptions */
+  addProductHoverListeners();
+}
+
+/* Add hover event listeners to product cards for description tooltips */
+function addProductHoverListeners() {
+  const productCards = document.querySelectorAll(".product-card");
+
+  productCards.forEach((card) => {
+    /* CSS handles the hover effect, but we can add additional logic here if needed */
+    /* The tooltip will show/hide automatically with CSS :hover pseudo-class */
+  });
 }
 
 /* Filter and display products when category changes */
@@ -193,6 +209,17 @@ categoryFilter.addEventListener("change", async (e) => {
 
   displayProducts(filteredProducts);
 });
+
+/* Chat form submission handler - placeholder for OpenAI integration */
+chatForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
+});
+  const filteredProducts = products.filter(
+    (product) => product.category === selectedCategory
+  );
+  displayProducts(filteredProducts);
 
 /* Chat form submission handler - placeholder for OpenAI integration */
 chatForm.addEventListener("submit", (e) => {
