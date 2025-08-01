@@ -442,6 +442,39 @@ body {
   grid-column: 1 / -1;
 }
 
+/* Chat message styling */
+.message {
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+.user-message {
+  background: #e8f4f8;
+  border-left: 4px solid #0066cc;
+}
+
+.ai-message {
+  background: #f0f0f0;
+  border-left: 4px solid #666;
+}
+
+.error-message {
+  background: #ffe6e6;
+  border-left: 4px solid #ff4444;
+  color: #cc0000;
+}
+
+.message strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.message em {
+  color: #666;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .products-grid {

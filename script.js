@@ -210,20 +210,117 @@ categoryFilter.addEventListener("change", async (e) => {
   displayProducts(filteredProducts);
 });
 
-/* Chat form submission handler - placeholder for OpenAI integration */
-chatForm.addEventListener("submit", (e) => {
-  e.preventDefault();
+/* Array to store conversation history */
+let messages = [];
 
-  chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
+/* Cloudflare Worker URL for OpenAI API */
+const workerUrl = 'https://loreal-worker.nguyen-c9.workers.dev/';
+
+/* Chat form submission handler - Cloudflare Worker integration */
+chatForm.addEventListener('submit', async (event) => {
+  event.preventDefault(); // Prevent the form from submitting the traditional way
+  
+  /* Get the user's message from the input field */
+  const userInput = document.getElementById("userInput");
+  const userMessage = userInput.value.trim();
+  
+  /* Don't send empty messages */
+  if (!userMessage) {
+    return;
+  }
+  
+  /* Show loading message in chat window */
+  chatWindow.innerHTML = `
+    <div class="message user-message">
+      <strong>You:</strong> ${userMessage}
+    </div>
+    <div class="message ai-message">
+      <strong>AI Assistant:</strong> <em>Thinking...</em>
+    </div>
+  `;
+  
+  /* Clear the input field */
+  userInput.value = "";
+  
+  /* Create system message if this is the first message */
+  if (messages.length === 0) {
+    /* Build context about selected products */
+    let productContext = "";
+    if (selectedProducts.length > 0) {
+      productContext = `\n\nThe user has selected these products: ${selectedProducts
+        .map((p) => `${p.name} by ${p.brand}`)
+        .join(", ")}`;
+    }
+    
+    /* Add system message to help AI understand its role */
+    messages.push({
+      role: 'system',
+      content: `You are a helpful beauty and skincare assistant for L'Oréal products. 
+      Help users create personalized beauty routines based on their selected products and needs. 
+      Be friendly, knowledgeable, and provide practical advice about skincare, makeup, and haircare.
+      Keep responses concise and helpful.${productContext}`
+    });
+  }
+
+  /* Add the user's message to the conversation history */
+  messages.push({ role: 'user', content: userMessage });
+
+  try {
+    /* Send a POST request to your Cloudflare Worker */
+    const response = await fetch(workerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: messages,
+      }),
+    });
+
+    /* Check if the response is successful */
+    if (!response.ok) {
+      throw new Error(`Worker request failed: ${response.status} ${response.statusText}`);
+    }
+
+    /* Parse the JSON response from the worker */
+    const data = await response.json();
+
+    /* Get the AI's response from the worker data */
+    const aiResponse = data.choices[0].message.content;
+    
+    /* Add AI response to conversation history */
+    messages.push({ role: 'assistant', content: aiResponse });
+
+    /* Update the chat window with both messages */
+    updateChatDisplay(userMessage, aiResponse);
+
+  } catch (error) {
+    /* Show error message if worker call fails */
+    console.error("Error calling Cloudflare Worker:", error);
+    chatWindow.innerHTML = `
+      <div class="message user-message">
+        <strong>You:</strong> ${userMessage}
+      </div>
+      <div class="message error-message">
+        <strong>Error:</strong> Sorry, I'm having trouble connecting right now. Please try again later.
+      </div>
+    `;
+  }
 });
-  const filteredProducts = products.filter(
-    (product) => product.category === selectedCategory
-  );
-  displayProducts(filteredProducts);
 
-/* Chat form submission handler - placeholder for OpenAI integration */
-chatForm.addEventListener("submit", (e) => {
-  e.preventDefault();
+/* Function to update the chat display with messages */
+function updateChatDisplay(userMessage, aiResponse) {
+  chatWindow.innerHTML = `
+    <div class="message user-message">
+      <strong>You:</strong> ${userMessage}
+    </div>
+    <div class="message ai-message">
+      <strong>AI Assistant:</strong> ${aiResponse}
+    </div>
+  `;
+}
+  
 
-  chatWindow.innerHTML = "Connect to the OpenAI API for a response!";
-});
+  /* Store the user message for display */
+  userInput.dataset.lastMessage = userMessage;
+
